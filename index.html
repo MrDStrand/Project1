@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <title>Svenska Travbanor – Väder & Temperatur</title>
+
+  <!-- Leaflet CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+    #map {
+      height: 100%;
+      width: 100%;
+    }
+    .weather-icon {
+      width: 28px;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    // Skapa Sverige-kartan
+    const map = L.map('map').setView([62.0, 15.0], 5);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Travbanorna
+   const tracks = [
+  // Norra / mellersta Norrland
+  { name: "Bergsåker",               lat: 62.4158, lon: 17.2165 },   // exakta, Koordinater.se
+  { name: "Dannero",                 lat: 63.0198, lon: 17.7932 },   // exakta, Koordinater.se
+  { name: "Solänget",                lat: 63.291,  lon: 18.72   },
+  { name: "Hoting",                  lat: 64.105,  lon: 16.189  },
+  { name: "Skellefteå",              lat: 64.751,  lon: 20.95   },
+  { name: "Umåker",                  lat: 63.8102, lon: 20.1949 },   // exakta, Koordinater.se
+  { name: "Lycksele",                lat: 64.595,  lon: 18.676  },
+  { name: "Haparanda",               lat: 65.838,  lon: 24.127  },
+  { name: "Östersund",               lat: 63.179,  lon: 14.66   },
+  { name: "Jämtlandsbanan (Östersund)", lat: 63.179, lon: 14.66 },   // samma område, separat markör om du vill
+
+  // Mellansverige
+  { name: "Bollnäs",                 lat: 61.3417, lon: 16.3351 },   // exakta, Koordinater.se
+  { name: "Hagmyren",                lat: 61.732,  lon: 16.807  },
+  { name: "Gävle",                   lat: 60.6903, lon: 17.1342 },   // exakta, Koordinater.se
+  { name: "Rättvik",                 lat: 60.883,  lon: 15.134  },
+  { name: "Romme",                   lat: 60.474,  lon: 15.437  },
+  { name: "Lindesberg",              lat: 59.602,  lon: 15.236  },
+  { name: "Örebro",                  lat: 59.303,  lon: 15.206  },
+
+  // Mälardalen / runt Stockholm
+  { name: "Solvalla",                lat: 59.3668, lon: 17.9462 },   // exakta, Koordinater.se
+  { name: "Eskilstuna (Sundbyholm)", lat: 59.4386, lon: 16.6143 },   // exakta, Koordinater.se
+  { name: "Mantorp",                 lat: 58.347,  lon: 15.287  },
+
+  // Västra / sydvästra Sverige
+  { name: "Åby",                     lat: 57.6495, lon: 12.0033 },   // GPS från Åbytravet (omräknat till decimal)
+  { name: "Åmål",                    lat: 59.051,  lon: 12.708  },
+  { name: "Årjäng",                  lat: 59.392,  lon: 12.135  },
+  { name: "Färjestad",               lat: 59.4091, lon: 13.5035 },   // exakta, Koordinater.se
+  { name: "Karlshamn",               lat: 56.171,  lon: 14.867  },
+  { name: "Vaggeryd",                lat: 57.5,    lon: 14.14   },
+
+  // Södra / sydöstra Sverige
+  { name: "Halmstad",                lat: 56.6927, lon: 12.9259 },   // exakta, Koordinater.se
+  { name: "Jägersro",                lat: 55.5735, lon: 13.0624 },   // exakta, Koordinater.se
+  { name: "Kalmar",                  lat: 56.700,  lon: 16.308  },
+  { name: "Tingsryd",                lat: 56.529,  lon: 14.976  },
+  { name: "Visby",                   lat: 57.634,  lon: 18.307  },
+
+  // Övriga mindre banor / sommarbanor
+  { name: "Åsele",                   lat: 64.162,  lon: 17.347  },
+  { name: "Oviken",                  lat: 62.995,  lon: 14.443  }
+];
+
+    const markers = [];
+
+    // Hämta väder från Open-Meteo
+    function fetchWeatherFor(track, marker) {
+      const url =
+        `https://api.open-meteo.com/v1/forecast?latitude=${track.lat}` +
+        `&longitude=${track.lon}&current_weather=true&temperature_unit=celsius`;
+
+      fetch(url)
+        .then(r => r.json())
+        .then(data => {
+          if (data && data.current_weather) {
+            const temp = data.current_weather.temperature;
+            const code = data.current_weather.weathercode;
+            const icon = weatherIcon(code);
+
+            marker.bindTooltip(
+              `${track.name}: ${temp.toFixed(1)} °C ${icon}`,
+              { permanent: true, direction: "top", offset: [0, -10] }
+            ).openTooltip();
+
+            marker.bindPopup(
+              `<b>${track.name}</b><br>` +
+              `Temperatur: ${temp.toFixed(1)} °C<br>` +
+              `Väder: ${weatherDescription(code)}`
+            );
+          }
+        });
+    }
+
+    // Översättning av WMO weather codes
+    function weatherDescription(code) {
+      const table = {
+        0: "Klart",
+        1: "Mest klart",
+        2: "Halvklart",
+        3: "Mulet",
+        45: "Dimma",
+        48: "Dimma med rimfrost",
+        51: "Lätt duggregn",
+        53: "Duggregn",
+        55: "Tungt duggregn",
+        61: "Lätt regn",
+        63: "Regn",
+        65: "Kraftigt regn",
+        71: "Lätt snöfall",
+        73: "Snöfall",
+        75: "Kraftigt snöfall",
+        80: "Lätta skurar",
+        81: "Skurar",
+        82: "Kraftiga skurar",
+        95: "Åska",
+        96: "Åska + lätt hagel",
+        99: "Åska + kraftigt hagel"
+      };
+      return table[code] || "Okänt väder";
+    }
+
+    // Väderikon emojis
+    function weatherIcon(code) {
+      if (code === 0) return "☀️";
+      if ([1, 2].includes(code)) return "🌤️";
+      if (code === 3) return "☁️";
+      if ([45, 48].includes(code)) return "🌫️";
+      if ([51, 53, 55, 61, 63, 65].includes(code)) return "🌧️";
+      if ([71, 73, 75].includes(code)) return "🌨️";
+      if ([80, 81, 82].includes(code)) return "🌦️";
+      if ([95, 96, 99].includes(code)) return "⛈️";
+      return "❓";
+    }
+
+    // Placera markörer
+    tracks.forEach(track => {
+      const marker = L.marker([track.lat, track.lon]).addTo(map);
+      markers.push({ track, marker });
+      fetchWeatherFor(track, marker);
+    });
+
+    // Uppdatera var 5:e minut
+    setInterval(() => {
+      markers.forEach(({ track, marker }) =>
+        fetchWeatherFor(track, marker)
+      );
+    }, 300000);
+  </script>
+</body>
+</html>
