@@ -144,31 +144,54 @@
 
     // Hämta väder från Open-Meteo
     function fetchWeatherFor(track, marker) {
-      const url =
-        `https://api.open-meteo.com/v1/forecast?latitude=${track.lat}` +
-        `&longitude=${track.lon}&current_weather=true&temperature_unit=celsius`;
+  const url =
+    `https://api.open-meteo.com/v1/forecast?latitude=${track.lat}` +
+    `&longitude=${track.lon}` +
+    `&current_weather=true&hourly=temperature_2m,weathercode&forecast_days=1&temperature_unit=celsius`;
 
-      fetch(url)
-        .then(r => r.json())
-        .then(data => {
-          if (data && data.current_weather) {
-            const temp = data.current_weather.temperature;
-            const code = data.current_weather.weathercode;
-            const icon = weatherIcon(code);
+  fetch(url)
+    .then(r => r.json())
+    .then(data => {
+      if (!data || !data.current_weather) return;
 
-            marker.bindTooltip(
-              `${track.name}: ${temp.toFixed(1)} °C ${icon}`,
-              { permanent: true, direction: "top", offset: [0, -10] }
-            ).openTooltip();
+      // Current weather
+      const temp = data.current_weather.temperature;
+      const code = data.current_weather.weathercode;
+      const icon = weatherIcon(code);
 
-            marker.bindPopup(
-              `<b>${track.name}</b><br>` +
-              `Temperatur: ${temp.toFixed(1)} °C<br>` +
-              `Väder: ${weatherDescription(code)}`
-            );
-          }
+      // Next 6-hour forecast
+      const nowIndex = data.hourly.time.indexOf(data.current_weather.time);
+      const nextHours = [];
+      for (let i = 1; i <= 6; i++) {
+        const idx = nowIndex + i;
+        nextHours.push({
+          time: data.hourly.time[idx].slice(11, 16),  // HH:MM
+          temp: data.hourly.temperature_2m[idx],
+          code: data.hourly.weathercode[idx],
+          icon: weatherIcon(data.hourly.weathercode[idx])
         });
-    }
+      }
+
+      // Tooltip (simple)
+      marker.bindTooltip(
+        `${track.name}: ${temp.toFixed(1)} °C ${icon}`,
+        { permanent: true, direction: "top", offset: [0, -10] }
+      ).openTooltip();
+
+      // Popup (detailed 6h forecast)
+      let forecastHTML = "<b>Nästa 6 timmar:</b><br>";
+      nextHours.forEach(h => {
+        forecastHTML += `${h.time}: ${h.temp.toFixed(1)} °C ${h.icon}<br>`;
+      });
+
+      marker.bindPopup(
+        `<b>${track.name}</b><br>` +
+        `Nu: ${temp.toFixed(1)} °C ${icon}<br><br>` +
+        forecastHTML
+      );
+    });
+}
+
 
     // Översättning av WMO weather codes
     function weatherDescription(code) {
