@@ -2,250 +2,151 @@
 <html lang="sv">
 <head>
   <meta charset="UTF-8" />
-  <title>Svenska Travbanor – Väder & Temperatur</title>
+  <title>Svenska Travbanor – Väder & Prognos</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <meta name="theme-color" content="#0b3d91" />
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
   <!-- Leaflet CSS -->
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
   />
 
-<style>
-  html, body {
-    height: 100%;
-    margin: 0;
-  }
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
 
-  #map {
-    height: 100%;
-    width: 100%;
-  }
+    #map {
+      height: 100%;
+      width: 100%;
+    }
 
-  /* FORCE large labels on iPhone */
-  .leaflet-tooltip {
-    font-size: 26px !important;
-    font-weight: 600 !important;
-    padding: 10px 14px !important;
-    line-height: 1.4 !important;
-    background-color: white;
-    border: 2px solid #444 !important;
-  }
-
-  /* Even larger popup text */
-  .leaflet-popup-content {
-    font-size: 26px !important;
-    line-height: 1.5 !important;
-  }
-
-  /* Popup titles */
-  .leaflet-popup-content b {
-    font-size: 30px !important;
-  }
-
-  /* Increase the icon size */
-  .weather-icon {
-    width: 36px !important;
-    height: 36px !important;
-    vertical-align: middle;
-  }
-
-  /* OPTIONAL: enlarge marker icons too */
-  .leaflet-marker-icon {
-    transform: scale(1.4) !important;
-    transform-origin: center;
-  }
-
-  /* iPhone fine-tuning */
-  @media (max-width: 600px) {
+    /* FORCE large labels on mobile (iPhone) */
     .leaflet-tooltip {
-      font-size: 28px !important;
-      padding: 12px 16px !important;
+      font-size: 26px !important;
+      font-weight: 600 !important;
+      padding: 10px 14px !important;
+      line-height: 1.4 !important;
+      background-color: white;
+      border: 2px solid #444 !important;
     }
+
+    /* Larger popup text */
     .leaflet-popup-content {
-      font-size: 28px !important;
+      font-size: 26px !important;
+      line-height: 1.5 !important;
     }
-  }
-</style>
 
+    .leaflet-popup-content b {
+      font-size: 30px !important;
+    }
 
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0b3d91">
+    /* Bigger weather icon */
+    .weather-icon {
+      width: 36px !important;
+      height: 36px !important;
+      vertical-align: middle;
+    }
 
-<!-- iOS PWA tweaks -->
-<link rel="apple-touch-icon" href="icons/icon-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    /* Enlarge marker icons a bit */
+    .leaflet-marker-icon {
+      transform: scale(1.4) !important;
+      transform-origin: center;
+    }
 
+    /* Extra bump for small screens */
+    @media (max-width: 600px) {
+      .leaflet-tooltip {
+        font-size: 28px !important;
+        padding: 12px 16px !important;
+      }
+      .leaflet-popup-content {
+        font-size: 28px !important;
+      }
+      .leaflet-popup-content b {
+        font-size: 32px !important;
+      }
+    }
+  </style>
 </head>
 <body>
   <div id="map"></div>
 
   <!-- Leaflet JS -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
 
   <script>
-    // Skapa Sverige-kartan
-    const map = L.map('map').setView([62.0, 15.0], 5);
+    // ====== KARTA ======
+    const map = L.map("map").setView([62.0, 15.0], 5);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 18,
-      attribution: '&copy; OpenStreetMap contributors'
+      attribution: "&copy; OpenStreetMap contributors"
     }).addTo(map);
 
-    // Travbanorna
-   const tracks = [
-  // Norra / mellersta Norrland
-  { name: "Bergsåker",               lat: 62.4158, lon: 17.2165 },   // exakta, Koordinater.se
-  { name: "Dannero",                 lat: 63.0198, lon: 17.7932 },   // exakta, Koordinater.se
-  { name: "Solänget",                lat: 63.291,  lon: 18.72   },
-  { name: "Hoting",                  lat: 64.105,  lon: 16.189  },
-  { name: "Skellefteå",              lat: 64.751,  lon: 20.95   },
-  { name: "Umåker",                  lat: 63.8102, lon: 20.1949 },   // exakta, Koordinater.se
-  { name: "Lycksele",                lat: 64.595,  lon: 18.676  },
-  { name: "Haparanda",               lat: 65.838,  lon: 24.127  },
-  { name: "Östersund",               lat: 63.179,  lon: 14.66   },
-  { name: "Jämtlandsbanan (Östersund)", lat: 63.179, lon: 14.66 },   // samma område, separat markör om du vill
+    // ====== TRAVBANOR (33 st) ======
+    const tracks = [
+      // Norra / mellersta Norrland
+      { name: "Bergsåker",               lat: 62.4158, lon: 17.2165 },
+      { name: "Dannero",                 lat: 63.0198, lon: 17.7932 },
+      { name: "Solänget",                lat: 63.291,  lon: 18.72 },
+      { name: "Hoting",                  lat: 64.105,  lon: 16.189 },
+      { name: "Skellefteå",              lat: 64.751,  lon: 20.95 },
+      { name: "Umåker",                  lat: 63.8102, lon: 20.1949 },
+      { name: "Lycksele",                lat: 64.595,  lon: 18.676 },
+      { name: "Haparanda",               lat: 65.838,  lon: 24.127 },
+      { name: "Östersund",               lat: 63.179,  lon: 14.66 },
+      { name: "Oviken",                  lat: 62.995,  lon: 14.443 },
+      { name: "Åsele",                   lat: 64.162,  lon: 17.347 },
 
-  // Mellansverige
-  { name: "Bollnäs",                 lat: 61.3417, lon: 16.3351 },   // exakta, Koordinater.se
-  { name: "Hagmyren",                lat: 61.732,  lon: 16.807  },
-  { name: "Gävle",                   lat: 60.6903, lon: 17.1342 },   // exakta, Koordinater.se
-  { name: "Rättvik",                 lat: 60.883,  lon: 15.134  },
-  { name: "Romme",                   lat: 60.474,  lon: 15.437  },
-  { name: "Lindesberg",              lat: 59.602,  lon: 15.236  },
-  { name: "Örebro",                  lat: 59.303,  lon: 15.206  },
+      // Mellansverige
+      { name: "Bollnäs",                 lat: 61.3417, lon: 16.3351 },
+      { name: "Hagmyren",                lat: 61.732,  lon: 16.807 },
+      { name: "Gävle",                   lat: 60.6903, lon: 17.1342 },
+      { name: "Rättvik",                 lat: 60.883,  lon: 15.134 },
+      { name: "Romme",                   lat: 60.474,  lon: 15.437 },
+      { name: "Lindesberg",              lat: 59.602,  lon: 15.236 },
+      { name: "Örebro",                  lat: 59.303,  lon: 15.206 },
 
-  // Mälardalen / runt Stockholm
-  { name: "Solvalla",                lat: 59.3668, lon: 17.9462 },   // exakta, Koordinater.se
-  { name: "Eskilstuna (Sundbyholm)", lat: 59.4386, lon: 16.6143 },   // exakta, Koordinater.se
-  { name: "Mantorp",                 lat: 58.347,  lon: 15.287  },
+      // Mälardalen / runt Stockholm
+      { name: "Solvalla",                lat: 59.3668, lon: 17.9462 },
+      { name: "Eskilstuna (Sundbyholm)", lat: 59.4386, lon: 16.6143 },
+      { name: "Mantorp",                 lat: 58.347,  lon: 15.287 },
 
-  // Västra / sydvästra Sverige
-  { name: "Åby",                     lat: 57.6495, lon: 12.0033 },   // GPS från Åbytravet (omräknat till decimal)
-  { name: "Åmål",                    lat: 59.051,  lon: 12.708  },
-  { name: "Årjäng",                  lat: 59.392,  lon: 12.135  },
-  { name: "Färjestad",               lat: 59.4091, lon: 13.5035 },   // exakta, Koordinater.se
-  { name: "Karlshamn",               lat: 56.171,  lon: 14.867  },
-  { name: "Vaggeryd",                lat: 57.5,    lon: 14.14   },
+      // Västra / sydvästra Sverige
+      { name: "Åby",                     lat: 57.6495, lon: 12.0033 },
+      { name: "Åmål",                    lat: 59.051,  lon: 12.708 },
+      { name: "Årjäng",                  lat: 59.392,  lon: 12.135 },
+      { name: "Färjestad",               lat: 59.4091, lon: 13.5035 },
+      { name: "Karlshamn",               lat: 56.171,  lon: 14.867 },
+      { name: "Vaggeryd",                lat: 57.5,    lon: 14.14 },
 
-  // Södra / sydöstra Sverige
-  { name: "Halmstad",                lat: 56.6927, lon: 12.9259 },   // exakta, Koordinater.se
-  { name: "Jägersro",                lat: 55.5735, lon: 13.0624 },   // exakta, Koordinater.se
-  { name: "Kalmar",                  lat: 56.700,  lon: 16.308  },
-  { name: "Tingsryd",                lat: 56.529,  lon: 14.976  },
-  { name: "Visby",                   lat: 57.634,  lon: 18.307  },
-
-  // Övriga mindre banor / sommarbanor
-  { name: "Åsele",                   lat: 64.162,  lon: 17.347  },
-  { name: "Oviken",                  lat: 62.995,  lon: 14.443  }
-];
+      // Södra / sydöstra Sverige
+      { name: "Halmstad",                lat: 56.6927, lon: 12.9259 },
+      { name: "Jägersro",                lat: 55.5735, lon: 13.0624 },
+      { name: "Kalmar",                  lat: 56.700,  lon: 16.308 },
+      { name: "Tingsryd",                lat: 56.529,  lon: 14.976 },
+      { name: "Visby",                   lat: 57.634,  lon: 18.307 }
+    ];
 
     const markers = [];
 
-    tracks.forEach(track => {
-  const marker = L.marker([track.lat, track.lon]).addTo(map);
-  markers.push({ track, marker });
-
-  // fetch current weather + 6-hour forecast
-  fetchWeatherFor(track, marker);
-
-  // make absolutely sure tapping opens popup
-  marker.on("click", () => {
-    marker.openPopup();
-  });
-});
-
-    
-    // Hämta väder från Open-Meteo
-   function fetchWeatherFor(track, marker) {
-  const url =
-    `https://api.open-meteo.com/v1/forecast?latitude=${track.lat}` +
-    `&longitude=${track.lon}` +
-    `&current_weather=true` +
-    `&hourly=temperature_2m,weathercode` +
-    `&forecast_days=1` +
-    `&temperature_unit=celsius`;
-
-  fetch(url)
-    .then(r => r.json())
-    .then(data => {
-      if (!data || !data.current_weather || !data.hourly) return;
-
-      // current weather
-      const temp = data.current_weather.temperature;
-      const code = data.current_weather.weathercode;
-      const icon = weatherIcon(code);
-
-      // find the index of the current time in the hourly array
-      const nowTime = data.current_weather.time;
-      let nowIndex = data.hourly.time.indexOf(nowTime);
-      if (nowIndex === -1) {
-        // fallback if string mismatch – take nearest index
-        nowIndex = 0;
-      }
-
-      const nextHours = [];
-      for (let i = 1; i <= 6; i++) {
-        const idx = nowIndex + i;
-        if (
-          idx < data.hourly.time.length &&
-          data.hourly.temperature_2m[idx] != null
-        ) {
-          nextHours.push({
-            time: data.hourly.time[idx].slice(11, 16), // HH:MM
-            temp: data.hourly.temperature_2m[idx],
-            code: data.hourly.weathercode[idx],
-            icon: weatherIcon(data.hourly.weathercode[idx])
-          });
-        }
-      }
-
-      // tooltip: only current temp
-      marker.bindTooltip(
-        `${track.name}: ${temp.toFixed(1)} °C ${icon}`,
-        { permanent: true, direction: "top", offset: [0, -10] }
-      ).openTooltip();
-
-      // popup: current + next 6h
-      let forecastHTML = "<b>Nästa 6 timmar:</b><br>";
-      nextHours.forEach(h => {
-        forecastHTML += `${h.time}: ${h.temp.toFixed(1)} °C ${h.icon}<br>`;
-      });
-
-      marker.bindPopup(
-        `<b>${track.name}</b><br>` +
-        `Nu: ${temp.toFixed(1)} °C ${icon}<br><br>` +
-        forecastHTML
-      );
-    })
-    .catch(err => {
-      console.log("Weather fetch failed for", track.name, err);
-    });
-}
-
-
-      // Tooltip (simple)
-      marker.bindTooltip(
-        `${track.name}: ${temp.toFixed(1)} °C ${icon}`,
-        { permanent: true, direction: "top", offset: [0, -10] }
-      ).openTooltip();
-
-      // Popup (detailed 6h forecast)
-      let forecastHTML = "<b>Nästa 6 timmar:</b><br>";
-      nextHours.forEach(h => {
-        forecastHTML += `${h.time}: ${h.temp.toFixed(1)} °C ${h.icon}<br>`;
-      });
-
-      marker.bindPopup(
-        `<b>${track.name}</b><br>` +
-        `Nu: ${temp.toFixed(1)} °C ${icon}<br><br>` +
-        forecastHTML
-      );
-    });
-}
-
-
-    // Översättning av WMO weather codes
+    // ====== VÄDERKODER → TEXT ======
     function weatherDescription(code) {
       const table = {
         0: "Klart",
@@ -273,7 +174,7 @@
       return table[code] || "Okänt väder";
     }
 
-    // Väderikon emojis
+    // ====== VÄDERKODER → EMOJI ======
     function weatherIcon(code) {
       if (code === 0) return "☀️";
       if ([1, 2].includes(code)) return "🌤️";
@@ -286,32 +187,105 @@
       return "❓";
     }
 
-    // Placera markörer
+    // ====== HÄMTA NUVARANDE VÄDER + 6H PROGNOS ======
+    function fetchWeatherFor(track, marker) {
+      const url =
+        `https://api.open-meteo.com/v1/forecast?latitude=${track.lat}` +
+        `&longitude=${track.lon}` +
+        `&current_weather=true` +
+        `&hourly=temperature_2m,weathercode` +
+        `&forecast_days=1` +
+        `&temperature_unit=celsius`;
+
+      fetch(url)
+        .then(r => r.json())
+        .then(data => {
+          if (!data || !data.current_weather || !data.hourly) return;
+
+          const tempNow = data.current_weather.temperature;
+          const codeNow = data.current_weather.weathercode;
+          const iconNow = weatherIcon(codeNow);
+          const descNow = weatherDescription(codeNow);
+
+          // hitta index för "nu" i hourly-listan
+          const nowTime = data.current_weather.time;
+          let nowIndex = data.hourly.time.indexOf(nowTime);
+          if (nowIndex === -1) {
+            // fallback – ta första timmen
+            nowIndex = 0;
+          }
+
+          const nextHours = [];
+          for (let i = 1; i <= 6; i++) {
+            const idx = nowIndex + i;
+            if (
+              idx < data.hourly.time.length &&
+              data.hourly.temperature_2m[idx] != null
+            ) {
+              const t = data.hourly.time[idx];
+              nextHours.push({
+                time: t.slice(11, 16), // HH:MM
+                temp: data.hourly.temperature_2m[idx],
+                code: data.hourly.weathercode[idx],
+                icon: weatherIcon(data.hourly.weathercode[idx])
+              });
+            }
+          }
+
+          // Tooltip: bara nuvarande temp + ikon
+          marker.bindTooltip(
+            `${track.name}: ${tempNow.toFixed(1)} °C ${iconNow}`,
+            { permanent: true, direction: "top", offset: [0, -10] }
+          ).openTooltip();
+
+          // Popup: nu + nästa 6 timmar
+          let forecastHTML = "<b>Nästa 6 timmar:</b><br>";
+          nextHours.forEach(h => {
+            forecastHTML += `${h.time}: ${h.temp.toFixed(1)} °C ${h.icon}<br>`;
+          });
+
+          const popupHtml =
+            `<b>${track.name}</b><br>` +
+            `Nu: ${tempNow.toFixed(1)} °C ${iconNow} – ${descNow}<br><br>` +
+            forecastHTML;
+
+          marker.bindPopup(popupHtml);
+        })
+        .catch(err => {
+          console.log("Weather fetch failed for", track.name, err);
+        });
+    }
+
+    // ====== SKAPA MARKÖRER ======
     tracks.forEach(track => {
       const marker = L.marker([track.lat, track.lon]).addTo(map);
       markers.push({ track, marker });
+
       fetchWeatherFor(track, marker);
+
+      // säkerställ popup vid klick (framför allt på mobil)
+      marker.on("click", () => {
+        marker.openPopup();
+      });
     });
 
-    // Uppdatera var 5:e minut
+    // Uppdatera väder + prognos var 5:e minut
     setInterval(() => {
-      markers.forEach(({ track, marker }) =>
-        fetchWeatherFor(track, marker)
-      );
-    }, 300000);
+      markers.forEach(({ track, marker }) => fetchWeatherFor(track, marker));
+    }, 5 * 60 * 1000);
   </script>
 
+  <!-- PWA service worker -->
   <script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", function () {
-      navigator.serviceWorker
-        .register("./service-worker.js")
-        .catch(function (error) {
-          console.log("Service worker registration failed:", error);
-        });
-    });
-  }
-</script>
-
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker
+          .register("./service-worker.js")
+          .catch(function (error) {
+            console.log("Service worker registration failed:", error);
+          });
+      });
+    }
+  </script>
 </body>
 </html>
