@@ -142,35 +142,87 @@
 
     const markers = [];
 
+    tracks.forEach(track => {
+  const marker = L.marker([track.lat, track.lon]).addTo(map);
+  markers.push({ track, marker });
+
+  // fetch current weather + 6-hour forecast
+  fetchWeatherFor(track, marker);
+
+  // make absolutely sure tapping opens popup
+  marker.on("click", () => {
+    marker.openPopup();
+  });
+});
+
+    
     // Hämta väder från Open-Meteo
-    function fetchWeatherFor(track, marker) {
+   function fetchWeatherFor(track, marker) {
   const url =
     `https://api.open-meteo.com/v1/forecast?latitude=${track.lat}` +
     `&longitude=${track.lon}` +
-    `&current_weather=true&hourly=temperature_2m,weathercode&forecast_days=1&temperature_unit=celsius`;
+    `&current_weather=true` +
+    `&hourly=temperature_2m,weathercode` +
+    `&forecast_days=1` +
+    `&temperature_unit=celsius`;
 
   fetch(url)
     .then(r => r.json())
     .then(data => {
-      if (!data || !data.current_weather) return;
+      if (!data || !data.current_weather || !data.hourly) return;
 
-      // Current weather
+      // current weather
       const temp = data.current_weather.temperature;
       const code = data.current_weather.weathercode;
       const icon = weatherIcon(code);
 
-      // Next 6-hour forecast
-      const nowIndex = data.hourly.time.indexOf(data.current_weather.time);
+      // find the index of the current time in the hourly array
+      const nowTime = data.current_weather.time;
+      let nowIndex = data.hourly.time.indexOf(nowTime);
+      if (nowIndex === -1) {
+        // fallback if string mismatch – take nearest index
+        nowIndex = 0;
+      }
+
       const nextHours = [];
       for (let i = 1; i <= 6; i++) {
         const idx = nowIndex + i;
-        nextHours.push({
-          time: data.hourly.time[idx].slice(11, 16),  // HH:MM
-          temp: data.hourly.temperature_2m[idx],
-          code: data.hourly.weathercode[idx],
-          icon: weatherIcon(data.hourly.weathercode[idx])
-        });
+        if (
+          idx < data.hourly.time.length &&
+          data.hourly.temperature_2m[idx] != null
+        ) {
+          nextHours.push({
+            time: data.hourly.time[idx].slice(11, 16), // HH:MM
+            temp: data.hourly.temperature_2m[idx],
+            code: data.hourly.weathercode[idx],
+            icon: weatherIcon(data.hourly.weathercode[idx])
+          });
+        }
       }
+
+      // tooltip: only current temp
+      marker.bindTooltip(
+        `${track.name}: ${temp.toFixed(1)} °C ${icon}`,
+        { permanent: true, direction: "top", offset: [0, -10] }
+      ).openTooltip();
+
+      // popup: current + next 6h
+      let forecastHTML = "<b>Nästa 6 timmar:</b><br>";
+      nextHours.forEach(h => {
+        forecastHTML += `${h.time}: ${h.temp.toFixed(1)} °C ${h.icon}<br>`;
+      });
+
+      marker.bindPopup(
+        `<b>${track.name}</b><br>` +
+        `Nu: ${temp.toFixed(1)} °C ${icon}<br><br>` +
+        forecastHTML
+      );
+    })
+    .catch(err => {
+      console.log("Weather fetch failed for", track.name, err);
+    });
+}
+
 
       // Tooltip (simple)
       marker.bindTooltip(
