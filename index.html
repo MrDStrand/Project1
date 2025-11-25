@@ -10,20 +10,43 @@
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
   />
 
-  <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-    }
-    #map {
-      height: 100%;
-      width: 100%;
-    }
-    .weather-icon {
-      width: 34px;
-      vertical-align: middle;
-    }
-  </style>
+<style>
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+
+  #map {
+    height: 100%;
+    width: 100%;
+  }
+
+  /* Bigger tooltips */
+  .leaflet-tooltip {
+    font-size: 20px !important;
+    font-weight: 600;
+    padding: 8px 12px !important;
+  }
+
+  /* Bigger popup text */
+  .leaflet-popup-content {
+    font-size: 20px !important;
+    line-height: 1.4;
+  }
+
+  /* Larger popup title */
+  .leaflet-popup-content b {
+    font-size: 22px !important;
+  }
+
+  /* Bigger weather icon inside tooltip */
+  .weather-icon {
+    width: 28px; 
+    height: 28px;
+    vertical-align: middle;
+  }
+</style>
+
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b3d91">
 
