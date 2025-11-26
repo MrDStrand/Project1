@@ -1,4 +1,4 @@
-const CACHE_NAME = "travkarta-cache-v10";
+const CACHE_NAME = "travkarta-cache-v11";
 const URLS_TO_CACHE = [
   "./",
   "./index.html",
