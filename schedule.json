@@ -373,6 +373,247 @@
     "date": "2025-12-31",
     "trackName": "Axevalla",
     "firstStart": "14:20"
+  },
+
+  {
+    "date": "2026-01-01",
+    "trackName": "Åby",
+    "firstStart": "14:05"
+  },
+  {
+    "date": "2026-01-02",
+    "trackName": "Eskilstuna (Sundbyholm)",
+    "firstStart": "12:20"
+  },
+  {
+    "date": "2026-01-02",
+    "trackName": "Romme",
+    "firstStart": "18:20"
+  },
+  {
+    "date": "2026-01-03",
+    "trackName": "Jägersro",
+    "firstStart": "15:20"
+  },
+  {
+    "date": "2026-01-04",
+    "trackName": "Bergsåker",
+    "firstStart": "13:45"
+  },
+  {
+    "date": "2026-01-05",
+    "trackName": "Färjestad",
+    "firstStart": "12:20"
+  },
+  {
+    "date": "2026-01-05",
+    "trackName": "Bollnäs",
+    "firstStart": "18:20"
+  },
+  {
+    "date": "2026-01-06",
+    "trackName": "Boden",
+    "firstStart": "13:45"
+  },
+  {
+    "date": "2026-01-07",
+    "trackName": "Åby",
+    "firstStart": "12:20"
+  },
+  {
+    "date": "2026-01-07",
+    "trackName": "Solvalla",
+    "firstStart": "18:40"
+  },
+  {
+    "date": "2026-01-08",
+    "trackName": "Gävle",
+    "firstStart": "18:20"
+  },
+  {
+    "date": "2026-01-09",
+    "trackName": "Jägersro",
+    "firstStart": "12:20"
+  },
+  {
+    "date": "2026-01-09",
+    "trackName": "Eskilstuna (Sundbyholm)",
+    "firstStart": "18:20"
+  },
+  {
+    "date": "2026-01-10",
+    "trackName": "Romme",
+    "firstStart": "15:20"
+  },
+  {
+    "date": "2026-01-11",
+    "trackName": "Östersund",
+    "firstStart": "13:45"
+  },
+  {
+    "date": "2026-01-12",
+    "trackName": "Mantorp",
+    "firstStart": "12:20"
+  },
+  {
+    "date": "2026-01-12",
+    "trackName": "Umåker",
+    "firstStart": "18:20"
+  },
+  {
+    "date": "2026-01-13",
+    "trackName": "Bergsåker",
+    "firstStart": "12:20"
+  },
+  {
+    "date": "2026-01-13",
+    "trackName": "Axevalla",
+    "firstStart": "18:20"
+  },
+  {
+    "date": "2026-01-14",
+    "trackName": "Åby",
+    "firstStart": "18:27"
+  },
+  {
+    "date": "2026-01-14",
+    "trackName": "Solvalla",
+    "firstStart": "18:40"
+  },
+  {
+    "date": "2026-01-15",
+    "trackName": "Bollnäs",
+    "firstStart": "12:20"
+  },
+  {
+    "date": "2026-01-15",
+    "trackName": "Örebro",
+    "firstStart": "18:20"
+  },
+  {
+    "date": "2026-01-16",
+    "trackName": "Kalmar",
+    "firstStart": "12:20"
+  },
+  {
+    "date": "2026-01-16",
+    "trackName": "Boden",
+    "firstStart": "18:20"
+  },
+  {
+    "date": "2026-01-17",
+    "trackName": "Eskilstuna (Sundbyholm)",
+    "firstStart": "15:20"
+  },
+  {
+    "date": "2026-01-18",
+    "trackName": "Gävle",
+    "firstStart": "13:45"
+  },
+  {
+    "date": "2026-01-19",
+    "trackName": "Halmstad",
+    "firstStart": "12:20"
+  },
+  {
+    "date": "2026-01-19",
+    "trackName": "Romme",
+    "firstStart": "18:20"
+  },
+  {
+    "date": "2026-01-20",
+    "trackName": "Jägersro",
+    "firstStart": "18:20"
+  },
+  {
+    "date": "2026-01-21",
+    "trackName": "Bergsåker",
+    "firstStart": "18:27"
+  },
+  {
+    "date": "2026-01-21",
+    "trackName": "Solvalla",
+    "firstStart": "18:40"
+  },
+  {
+    "date": "2026-01-22",
+    "trackName": "Bollnäs",
+    "firstStart": "12:20"
+  },
+  {
+    "date": "2026-01-22",
+    "trackName": "Axevalla",
+    "firstStart": "18:20"
+  },
+  {
+    "date": "2026-01-23",
+    "trackName": "Östersund",
+    "firstStart": "12:20"
+  },
+  {
+    "date": "2026-01-23",
+    "trackName": "Färjestad",
+    "firstStart": "18:20"
+  },
+  {
+    "date": "2026-01-24",
+    "trackName": "Kalmar",
+    "firstStart": "15:20"
+  },
+  {
+    "date": "2026-01-25",
+    "trackName": "Umåker",
+    "firstStart": "16:05"
+  },
+  {
+    "date": "2026-01-26",
+    "trackName": "Romme",
+    "firstStart": "18:20"
+  },
+  {
+    "date": "2026-01-27",
+    "trackName": "Jägersro",
+    "firstStart": "12:20"
+  },
+  {
+    "date": "2026-01-27",
+    "trackName": "Eskilstuna (Sundbyholm)",
+    "firstStart": "18:20"
+  },
+  {
+    "date": "2026-01-28",
+    "trackName": "Åby",
+    "firstStart": "18:27"
+  },
+  {
+    "date": "2026-01-28",
+    "trackName": "Solvalla",
+    "firstStart": "18:40"
+  },
+  {
+    "date": "2026-01-29",
+    "trackName": "Boden",
+    "firstStart": "12:20"
+  },
+  {
+    "date": "2026-01-29",
+    "trackName": "Gävle",
+    "firstStart": "18:20"
+  },
+  {
+    "date": "2026-01-30",
+    "trackName": "Bergsåker",
+    "firstStart": "12:20"
+  },
+  {
+    "date": "2026-01-30",
+    "trackName": "Örebro",
+    "firstStart": "18:20"
+  },
+  {
+    "date": "2026-01-31",
+    "trackName": "Färjestad",
+    "firstStart": "15:20"
   }
 
 ]
