@@ -2,7 +2,7 @@
 <html lang="sv">
 <head>
   <meta charset="UTF-8" />
-  <title>Svenska Travbanor – Väder & Prognos</title>
+  <title>Svenska Travbanor – Dagens tävlingar</title>
 
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <meta name="theme-color" content="#0b3d91" />
@@ -32,7 +32,7 @@
       width: 100%;
     }
 
-    /* Tooltips – medium size, readable on iPhone */
+    /* Tooltips – medelstor text */
     .leaflet-tooltip {
       font-size: 18px !important;
       font-weight: 600 !important;
@@ -42,7 +42,7 @@
       border: 1px solid #444 !important;
     }
 
-    /* Popup text – medium */
+    /* Popup-text – medelstor */
     .leaflet-popup-content {
       font-size: 18px !important;
       line-height: 1.5 !important;
@@ -53,12 +53,11 @@
     }
 
     .weather-icon {
-      width: 28px !important;
-      height: 28px !important;
+      width: 24px !important;
+      height: 24px !important;
       vertical-align: middle;
     }
 
-    /* Slightly larger on small screens, but not huge */
     @media (max-width: 600px) {
       .leaflet-tooltip {
         font-size: 19px !important;
@@ -83,7 +82,57 @@
   ></script>
 
   <script>
-    // ====== KARTA ======
+    // ========= HJÄLPFUNKTIONER =========
+
+    // Lokal datumsträng YYYY-MM-DD (inte UTC)
+    function getTodayISO() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, "0");
+      const d = String(now.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function weatherDescription(code) {
+      const table = {
+        0: "Klart",
+        1: "Mest klart",
+        2: "Halvklart",
+        3: "Mulet",
+        45: "Dimma",
+        48: "Dimma med rimfrost",
+        51: "Lätt duggregn",
+        53: "Duggregn",
+        55: "Tungt duggregn",
+        61: "Lätt regn",
+        63: "Regn",
+        65: "Kraftigt regn",
+        71: "Lätt snöfall",
+        73: "Snöfall",
+        75: "Kraftigt snöfall",
+        80: "Lätta skurar",
+        81: "Skurar",
+        82: "Kraftiga skurar",
+        95: "Åska",
+        96: "Åska + lätt hagel",
+        99: "Åska + kraftigt hagel"
+      };
+      return table[code] || "Okänt väder";
+    }
+
+    function weatherIcon(code) {
+      if (code === 0) return "☀️";
+      if ([1, 2].includes(code)) return "🌤️";
+      if (code === 3) return "☁️";
+      if ([45, 48].includes(code)) return "🌫️";
+      if ([51, 53, 55, 61, 63, 65].includes(code)) return "🌧️";
+      if ([71, 73, 75].includes(code)) return "🌨️";
+      if ([80, 81, 82].includes(code)) return "🌦️";
+      if ([95, 96, 99].includes(code)) return "⛈️";
+      return "❓";
+    }
+
+    // ========= KARTA =========
     const map = L.map("map").setView([62.0, 15.0], 5);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -91,8 +140,8 @@
       attribution: "&copy; OpenStreetMap contributors"
     }).addTo(map);
 
-    // ====== TRAVBANOR (33 st) ======
-    const tracks = [
+    // ========= ALLA 33 TRAVBANOR =========
+    const allTracks = [
       // Norra / mellersta Norrland
       { name: "Bergsåker",               lat: 62.4158, lon: 17.2165 },
       { name: "Dannero",                 lat: 63.0198, lon: 17.7932 },
@@ -138,48 +187,7 @@
 
     const markers = [];
 
-    // ====== VÄDERKODER → TEXT ======
-    function weatherDescription(code) {
-      const table = {
-        0: "Klart",
-        1: "Mest klart",
-        2: "Halvklart",
-        3: "Mulet",
-        45: "Dimma",
-        48: "Dimma med rimfrost",
-        51: "Lätt duggregn",
-        53: "Duggregn",
-        55: "Tungt duggregn",
-        61: "Lätt regn",
-        63: "Regn",
-        65: "Kraftigt regn",
-        71: "Lätt snöfall",
-        73: "Snöfall",
-        75: "Kraftigt snöfall",
-        80: "Lätta skurar",
-        81: "Skurar",
-        82: "Kraftiga skurar",
-        95: "Åska",
-        96: "Åska + lätt hagel",
-        99: "Åska + kraftigt hagel"
-      };
-      return table[code] || "Okänt väder";
-    }
-
-    // ====== VÄDERKODER → EMOJI ======
-    function weatherIcon(code) {
-      if (code === 0) return "☀️";
-      if ([1, 2].includes(code)) return "🌤️";
-      if (code === 3) return "☁️";
-      if ([45, 48].includes(code)) return "🌫️";
-      if ([51, 53, 55, 61, 63, 65].includes(code)) return "🌧️";
-      if ([71, 73, 75].includes(code)) return "🌨️";
-      if ([80, 81, 82].includes(code)) return "🌦️";
-      if ([95, 96, 99].includes(code)) return "⛈️";
-      return "❓";
-    }
-
-    // ====== HÄMTA NUVARANDE VÄDER + 6H PROGNOS ======
+    // ========= HÄMTA VÄDER + 6H PROGNOS =========
     function fetchWeatherFor(track, marker) {
       const url =
         `https://api.open-meteo.com/v1/forecast?latitude=${track.lat}` +
@@ -199,7 +207,6 @@
           const iconNow = weatherIcon(codeNow);
           const descNow = weatherDescription(codeNow);
 
-          // hitta nästa 6 timmar från "nu"
           const now = new Date(data.current_weather.time);
           const times = data.hourly.time;
           const temps = data.hourly.temperature_2m;
@@ -218,20 +225,23 @@
             const idx = startIndex + i;
             if (idx < times.length && temps[idx] != null) {
               nextHours.push({
-                time: times[idx].slice(11, 16), // HH:MM
+                time: times[idx].slice(11, 16),
                 temp: temps[idx],
-                code: codes[idx],
                 icon: weatherIcon(codes[idx])
               });
             }
           }
 
-          // Tooltip: nuvarande temp + ikon
-          marker.setTooltipContent(
-            `${track.name}: ${tempNow.toFixed(1)} °C ${iconNow}`
-          );
+          // Uppdatera tooltip
+          const tt = marker.getTooltip();
+          if (tt) {
+            tt.setContent(
+              `${track.name}: start ${track.firstStart}, ` +
+              `${tempNow.toFixed(1)} °C ${iconNow}`
+            );
+          }
 
-          // Popup: nu + nästa 6 timmar
+          // Bygg popup
           let forecastHTML = "<b>Nästa 6 timmar:</b><br>";
           nextHours.forEach(h => {
             forecastHTML += `${h.time}: ${h.temp.toFixed(1)} °C ${h.icon}<br>`;
@@ -239,6 +249,7 @@
 
           const popupHtml =
             `<b>${track.name}</b><br>` +
+            `Första start: ${track.firstStart}<br>` +
             `Nu: ${tempNow.toFixed(1)} °C ${iconNow} – ${descNow}<br><br>` +
             forecastHTML;
 
@@ -249,34 +260,73 @@
         });
     }
 
-    // ====== SKAPA MARKÖRER ======
-    tracks.forEach(track => {
-      const marker = L.marker([track.lat, track.lon]).addTo(map);
-      markers.push({ track, marker });
+    // ========= SKAPA MARKÖRER FÖR DAGENS BANOR =========
+    function buildMarkersForToday(schedule) {
+      const today = getTodayISO();
 
-      // initial tooltip + popup så att de alltid finns
-      marker.bindTooltip(
-        `${track.name}: laddar...`,
-        { permanent: true, direction: "top", offset: [0, -10] }
-      ).openTooltip();
+      // Filtrera fram alla starter idag
+      const todaysEntries = schedule.filter(e => e.date === today);
 
-      marker.bindPopup(
-        `<b>${track.name}</b><br>Laddar väder...`
-      );
-
-      // säkerställ popup vid klick (desktop + mobil)
-      marker.on("click", () => {
-        marker.openPopup();
+      // Bygg tabell trackName -> tidigaste firstStart
+      const byTrack = {};
+      todaysEntries.forEach(e => {
+        const name = e.trackName;
+        const time = e.firstStart;
+        if (!byTrack[name] || time < byTrack[name]) {
+          byTrack[name] = time;
+        }
       });
 
-      // hämta väder
-      fetchWeatherFor(track, marker);
-    });
+      const todaysTracks = allTracks
+        .filter(track => byTrack[track.name])
+        .map(track => ({
+          ...track,
+          firstStart: byTrack[track.name]
+        }));
 
-    // Uppdatera väder + prognos var 5:e minut
-    setInterval(() => {
-      markers.forEach(({ track, marker }) => fetchWeatherFor(track, marker));
-    }, 5 * 60 * 1000);
+      // Inga tävlingar idag?
+      if (todaysTracks.length === 0) {
+        alert("Inga tävlingar idag enligt schedule.json");
+        return;
+      }
+
+      todaysTracks.forEach(track => {
+        const marker = L.marker([track.lat, track.lon]).addTo(map);
+        markers.push({ track, marker });
+
+        // Grund-tooltip och popup
+        marker.bindTooltip(
+          `${track.name}: start ${track.firstStart}, laddar väder...`,
+          { permanent: true, direction: "top", offset: [0, -10] }
+        ).openTooltip();
+
+        marker.bindPopup(
+          `<b>${track.name}</b><br>` +
+          `Första start: ${track.firstStart}<br>` +
+          `Laddar väder...`
+        );
+
+        marker.on("click", () => marker.openPopup());
+
+        // Hämta väder
+        fetchWeatherFor(track, marker);
+      });
+    }
+
+    // ========= LADDA ÅRSSCHEMA FRÅN schedule.json =========
+    fetch("schedule.json")
+      .then(r => r.json())
+      .then(schedule => {
+        buildMarkersForToday(schedule);
+        // Uppdatera väder var 5:e minut
+        setInterval(() => {
+          markers.forEach(({ track, marker }) => fetchWeatherFor(track, marker));
+        }, 5 * 60 * 1000);
+      })
+      .catch(err => {
+        console.error("Kunde inte läsa schedule.json", err);
+        alert("Kunde inte läsa schedule.json – kontrollera filen.");
+      });
   </script>
 
   <!-- PWA service worker -->
