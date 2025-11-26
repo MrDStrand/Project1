@@ -17,8 +17,6 @@
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-    crossorigin=""
   />
 
   <style>
@@ -27,9 +25,44 @@
       margin: 0;
     }
 
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    #controls {
+      position: absolute;
+      z-index: 1000;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 6px 8px;
+      background: rgba(255, 255, 255, 0.9);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+
+    #controls label {
+      font-weight: 600;
+    }
+
+    #controls input[type="date"] {
+      font-size: 14px;
+      padding: 2px 4px;
+    }
+
+    #status {
+      font-size: 13px;
+      color: #333;
+    }
+
     #map {
-      height: 100%;
-      width: 100%;
+      position: absolute;
+      top: 34px; /* under kontrollraden */
+      bottom: 0;
+      left: 0;
+      right: 0;
     }
 
     /* Tooltips – medelstor text */
@@ -59,32 +92,37 @@
     }
 
     @media (max-width: 600px) {
+      #controls {
+        font-size: 13px;
+      }
       .leaflet-tooltip {
-        font-size: 19px !important;
+        font-size: 17px !important;
       }
       .leaflet-popup-content {
-        font-size: 19px !important;
+        font-size: 17px !important;
       }
       .leaflet-popup-content b {
-        font-size: 21px !important;
+        font-size: 19px !important;
       }
     }
   </style>
 </head>
 <body>
+  <div id="controls">
+    <label>
+      Datum:
+      <input type="date" id="datePicker" />
+    </label>
+    <span id="status"></span>
+  </div>
   <div id="map"></div>
 
   <!-- Leaflet JS -->
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""
-  ></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
-    // ========= HJÄLPFUNKTIONER =========
+    // ======== HJÄLPFUNKTIONER ========
 
-    // Lokal datumsträng YYYY-MM-DD (inte UTC)
     function getTodayISO() {
       const now = new Date();
       const y = now.getFullYear();
@@ -132,7 +170,7 @@
       return "❓";
     }
 
-    // ========= KARTA =========
+    // ======== KARTA ========
     const map = L.map("map").setView([62.0, 15.0], 5);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -140,7 +178,10 @@
       attribution: "&copy; OpenStreetMap contributors"
     }).addTo(map);
 
-    // ========= ALLA 33 TRAVBANOR =========
+    const statusEl = document.getElementById("status");
+    const datePicker = document.getElementById("datePicker");
+
+    // ======== ALLA BANOR ========
     const allTracks = [
       // Norra / mellersta Norrland
       { name: "Bergsåker",               lat: 62.4158, lon: 17.2165 },
@@ -185,40 +226,44 @@
       { name: "Visby",                   lat: 57.634,  lon: 18.307 }
     ];
 
-    const markers = [];
+    let scheduleData = [];
+    let markers = [];
 
-    // ========= HÄMTA VÄDER + 6H PROGNOS =========
-    function fetchWeatherFor(track, marker) {
+    // ======== VÄDER FRÅN FÖRSTA START (6H) ========
+    function fetchWeatherFor(track, marker, dateISO) {
       const url =
         `https://api.open-meteo.com/v1/forecast?latitude=${track.lat}` +
         `&longitude=${track.lon}` +
-        `&current_weather=true` +
         `&hourly=temperature_2m,weathercode` +
-        `&forecast_days=1` +
-        `&temperature_unit=celsius`;
+        `&timezone=Europe%2FStockholm` +
+        `&start_date=${dateISO}&end_date=${dateISO}`;
 
       fetch(url)
         .then(r => r.json())
         .then(data => {
-          if (!data || !data.current_weather || !data.hourly) return;
+          if (!data || !data.hourly) return;
 
-          const tempNow = data.current_weather.temperature;
-          const codeNow = data.current_weather.weathercode;
-          const iconNow = weatherIcon(codeNow);
-          const descNow = weatherDescription(codeNow);
-
-          const now = new Date(data.current_weather.time);
           const times = data.hourly.time;
           const temps = data.hourly.temperature_2m;
           const codes = data.hourly.weathercode;
 
+          if (!times || !temps || !codes) return;
+
+          // Hitta första timme >= första starttid
+          const target = `${dateISO}T${track.firstStart}:00`;
           let startIndex = 0;
           for (let i = 0; i < times.length; i++) {
-            if (new Date(times[i]) > now) {
+            if (times[i] >= target) {
               startIndex = i;
               break;
             }
           }
+
+          const startTemp = temps[startIndex];
+          const startCode = codes[startIndex];
+          const startIcon = weatherIcon(startCode);
+          const startDesc = weatherDescription(startCode);
+          const startTimeLabel = times[startIndex].slice(11, 16); // HH:MM
 
           const nextHours = [];
           for (let i = 0; i < 6; i++) {
@@ -232,25 +277,23 @@
             }
           }
 
-          // Uppdatera tooltip
           const tt = marker.getTooltip();
           if (tt) {
             tt.setContent(
               `${track.name}: start ${track.firstStart}, ` +
-              `${tempNow.toFixed(1)} °C ${iconNow}`
+              `${startTemp.toFixed(1)} °C ${startIcon}`
             );
           }
 
-          // Bygg popup
-          let forecastHTML = "<b>Nästa 6 timmar:</b><br>";
+          let forecastHTML = "<b>6 timmar från start:</b><br>";
           nextHours.forEach(h => {
             forecastHTML += `${h.time}: ${h.temp.toFixed(1)} °C ${h.icon}<br>`;
           });
 
           const popupHtml =
             `<b>${track.name}</b><br>` +
-            `Första start: ${track.firstStart}<br>` +
-            `Nu: ${tempNow.toFixed(1)} °C ${iconNow} – ${descNow}<br><br>` +
+            `Första start: ${track.firstStart} (prognos från ${startTimeLabel})<br>` +
+            `${startTemp.toFixed(1)} °C ${startIcon} – ${startDesc}<br><br>` +
             forecastHTML;
 
           marker.setPopupContent(popupHtml);
@@ -260,16 +303,25 @@
         });
     }
 
-    // ========= SKAPA MARKÖRER FÖR DAGENS BANOR =========
-    function buildMarkersForToday(schedule) {
-      const today = getTodayISO();
+    // ======== SKAPA MARKÖRER FÖR VALT DATUM ========
+    function clearMarkers() {
+      markers.forEach(({ marker }) => map.removeLayer(marker));
+      markers = [];
+    }
 
-      // Filtrera fram alla starter idag
-      const todaysEntries = schedule.filter(e => e.date === today);
+    function buildMarkersForDate(dateISO) {
+      clearMarkers();
 
-      // Bygg tabell trackName -> tidigaste firstStart
+      const entries = scheduleData.filter(e => e.date === dateISO);
+
+      if (entries.length === 0) {
+        statusEl.textContent = `Inga tävlingar i schedule.json för ${dateISO}`;
+        return;
+      }
+
+      // trackName -> tidigaste firstStart
       const byTrack = {};
-      todaysEntries.forEach(e => {
+      entries.forEach(e => {
         const name = e.trackName;
         const time = e.firstStart;
         if (!byTrack[name] || time < byTrack[name]) {
@@ -277,24 +329,24 @@
         }
       });
 
-      const todaysTracks = allTracks
+      const tracksToday = allTracks
         .filter(track => byTrack[track.name])
         .map(track => ({
           ...track,
           firstStart: byTrack[track.name]
         }));
 
-      // Inga tävlingar idag?
-      if (todaysTracks.length === 0) {
-        alert("Inga tävlingar idag enligt schedule.json");
+      if (tracksToday.length === 0) {
+        statusEl.textContent = `Datumet ${dateISO} finns i schedule.json men banorna matchar inte namnen i kartan.`;
         return;
       }
 
-      todaysTracks.forEach(track => {
+      statusEl.textContent = `Visar ${tracksToday.length} bana/banaor med lopp ${dateISO}.`;
+
+      tracksToday.forEach(track => {
         const marker = L.marker([track.lat, track.lon]).addTo(map);
         markers.push({ track, marker });
 
-        // Grund-tooltip och popup
         marker.bindTooltip(
           `${track.name}: start ${track.firstStart}, laddar väder...`,
           { permanent: true, direction: "top", offset: [0, -10] }
@@ -308,25 +360,31 @@
 
         marker.on("click", () => marker.openPopup());
 
-        // Hämta väder
-        fetchWeatherFor(track, marker);
+        fetchWeatherFor(track, marker, dateISO);
       });
     }
 
-    // ========= LADDA ÅRSSCHEMA FRÅN schedule.json =========
+    // ======== LADDA schedule.json & INIT ========
+    const todayISO = getTodayISO();
+    datePicker.value = todayISO;
+
     fetch("schedule.json")
       .then(r => r.json())
-      .then(schedule => {
-        buildMarkersForToday(schedule);
-        // Uppdatera väder var 5:e minut
-        setInterval(() => {
-          markers.forEach(({ track, marker }) => fetchWeatherFor(track, marker));
-        }, 5 * 60 * 1000);
+      .then(data => {
+        scheduleData = data || [];
+        buildMarkersForDate(todayISO);
       })
       .catch(err => {
         console.error("Kunde inte läsa schedule.json", err);
-        alert("Kunde inte läsa schedule.json – kontrollera filen.");
+        statusEl.textContent = "Kunde inte läsa schedule.json – kontrollera filen.";
       });
+
+    // När användaren väljer nytt datum
+    datePicker.addEventListener("change", () => {
+      const selected = datePicker.value;
+      if (!selected) return;
+      buildMarkersForDate(selected);
+    });
   </script>
 
   <!-- PWA service worker -->
@@ -336,10 +394,4 @@
         navigator.serviceWorker
           .register("./service-worker.js")
           .catch(function (error) {
-            console.log("Service worker registration failed:", error);
-          });
-      });
-    }
-  </script>
-</body>
-</html>
+            console.log("Service worker registration
