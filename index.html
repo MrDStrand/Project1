@@ -231,77 +231,86 @@
 
     // ======== VÄDER FRÅN FÖRSTA START (6H) ========
     function fetchWeatherFor(track, marker, dateISO) {
-      const url =
-        `https://api.open-meteo.com/v1/forecast?latitude=${track.lat}` +
-        `&longitude=${track.lon}` +
-        `&hourly=temperature_2m,weathercode` +
-        `&timezone=Europe%2FStockholm` +
-        `&start_date=${dateISO}&end_date=${dateISO}`;
+  const url =
+    `https://api.open-meteo.com/v1/forecast?latitude=${track.lat}` +
+    `&longitude=${track.lon}` +
+    `&current_weather=true` +
+    `&hourly=temperature_2m,weathercode` +
+    `&timezone=Europe%2FStockholm` +
+    `&start_date=${dateISO}&end_date=${dateISO}`;
 
-      fetch(url)
-        .then(r => r.json())
-        .then(data => {
-          if (!data || !data.hourly) return;
+  fetch(url)
+    .then(r => r.json())
+    .then(data => {
+      if (!data || !data.hourly || !data.current_weather) return;
 
-          const times = data.hourly.time;
-          const temps = data.hourly.temperature_2m;
-          const codes = data.hourly.weathercode;
+      const times = data.hourly.time;
+      const temps = data.hourly.temperature_2m;
+      const codes = data.hourly.weathercode;
 
-          if (!times || !temps || !codes) return;
+      if (!times || !temps || !codes) return;
 
-          // Hitta första timme >= första starttid
-          const target = `${dateISO}T${track.firstStart}:00`;
-          let startIndex = 0;
-          for (let i = 0; i < times.length; i++) {
-            if (times[i] >= target) {
-              startIndex = i;
-              break;
-            }
-          }
+      // 1) AKTUELLT VÄDER (NU)
+      const currentTemp = data.current_weather.temperature;
+      const currentCode = data.current_weather.weathercode;
+      const currentIcon = weatherIcon(currentCode);
+      const currentDesc = weatherDescription(currentCode);
 
-          const startTemp = temps[startIndex];
-          const startCode = codes[startIndex];
-          const startIcon = weatherIcon(startCode);
-          const startDesc = weatherDescription(startCode);
-          const startTimeLabel = times[startIndex].slice(11, 16); // HH:MM
+      // 2) VÄRDE VID FÖRSTA STARTTID (PROGNOS)
+      const target = `${dateISO}T${track.firstStart}:00`;
+      let startIndex = 0;
+      for (let i = 0; i < times.length; i++) {
+        if (times[i] >= target) {
+          startIndex = i;
+          break;
+        }
+      }
 
-          const nextHours = [];
-          for (let i = 0; i < 6; i++) {
-            const idx = startIndex + i;
-            if (idx < times.length && temps[idx] != null) {
-              nextHours.push({
-                time: times[idx].slice(11, 16),
-                temp: temps[idx],
-                icon: weatherIcon(codes[idx])
-              });
-            }
-          }
+      const startTemp = temps[startIndex];
+      const startCode = codes[startIndex];
+      const startIcon = weatherIcon(startCode);
+      const startDesc = weatherDescription(startCode);
+      const startTimeLabel = times[startIndex].slice(11, 16); // HH:MM
 
-          const tt = marker.getTooltip();
-          if (tt) {
-            tt.setContent(
-              `${track.name}: start ${track.firstStart}, ` +
-              `${startTemp.toFixed(1)} °C ${startIcon}`
-            );
-          }
-
-          let forecastHTML = "<b>6 timmar från start:</b><br>";
-          nextHours.forEach(h => {
-            forecastHTML += `${h.time}: ${h.temp.toFixed(1)} °C ${h.icon}<br>`;
+      // 3) 6-TIMMARS PROGNOS FRÅN STARTTID
+      const nextHours = [];
+      for (let i = 0; i < 6; i++) {
+        const idx = startIndex + i;
+        if (idx < times.length && temps[idx] != null) {
+          nextHours.push({
+            time: times[idx].slice(11, 16),
+            temp: temps[idx],
+            icon: weatherIcon(codes[idx])
           });
+        }
+      }
 
-          const popupHtml =
-            `<b>${track.name}</b><br>` +
-            `Första start: ${track.firstStart} (prognos från ${startTimeLabel})<br>` +
-            `${startTemp.toFixed(1)} °C ${startIcon} – ${startDesc}<br><br>` +
-            forecastHTML;
+      // Tooltip: visa NU-läget, inte start
+      const tt = marker.getTooltip();
+      if (tt) {
+        tt.setContent(
+          `${track.name}: nu ${currentTemp.toFixed(1)} °C ${currentIcon}`
+        );
+      }
 
-          marker.setPopupContent(popupHtml);
-        })
-        .catch(err => {
-          console.log("Weather fetch failed for", track.name, err);
-        });
-    }
+      // Popup: både nu + vid start + 6h
+      let forecastHTML = "<b>6 timmar från start:</b><br>";
+      nextHours.forEach(h => {
+        forecastHTML += `${h.time}: ${h.temp.toFixed(1)} °C ${h.icon}<br>`;
+      });
+
+      const popupHtml =
+        `<b>${track.name}</b><br>` +
+        `Nu: ${currentTemp.toFixed(1)} °C ${currentIcon} – ${currentDesc}<br>` +
+        `Vid start (${startTimeLabel}): ${startTemp.toFixed(1)} °C ${startIcon} – ${startDesc}<br><br>` +
+        forecastHTML;
+
+      marker.setPopupContent(popupHtml);
+    })
+    .catch(err => {
+      console.log("Weather fetch failed for", track.name, err);
+    });
+}
 
     // ======== SKAPA MARKÖRER FÖR VALT DATUM ========
     function clearMarkers() {
