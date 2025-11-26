@@ -56,3 +56,11 @@
   {
     "date": "2025-11-30",
     "trackName": "Mantorp",
+    "firstStart": "11:00"
+  },
+  {
+    "date": "2025-11-30",
+    "trackName": "Färjestad",
+    "firstStart": "13:45"
+  }
+]
