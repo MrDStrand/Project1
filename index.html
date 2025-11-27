@@ -292,7 +292,8 @@
       const tt = marker.getTooltip();
       if (tt) {
         tt.setContent(
-          `${track.name}: nu ${currentTemp.toFixed(1)} °C ${currentIcon}`
+          `${track.name}: ${currentTemp.toFixed(1)} °C ${currentIcon}<br>` + 
+         `Start ${track.firstStart}`
         );
       }
 
@@ -304,7 +305,7 @@
 
       const popupHtml =
   `<b>${track.name}</b><br>` +
-  `Nu: ${currentTemp.toFixed(1)} °C ${currentIcon} – ${currentDesc}<br>` +
+  `${currentTemp.toFixed(1)} °C ${currentIcon} – ${currentDesc}<br>` +
   `Vid start (${track.firstStart}): ${startTemp.toFixed(1)} °C ${startIcon} – ${startDesc}<br><br>` +
   forecastHTML;
 
