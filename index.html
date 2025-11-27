@@ -284,6 +284,7 @@
             time: times[idx].slice(11, 16),
             temp: temps[idx],
             icon: weatherIcon(codes[idx])
+            desc: weatherDescription(codes[idx])
           });
         }
       }
@@ -300,7 +301,7 @@
       // Popup: både nu + vid start + 6h
       let forecastHTML = "<b>6 timmar från start:</b><br>";
       nextHours.forEach(h => {
-        forecastHTML += `${h.time}: ${h.temp.toFixed(1)} °C ${h.icon}<br>`;
+        forecastHTML += `${h.time}: ${h.temp.toFixed(1)} °C ${h.icon} ${h.desc}<br>`;
       });
 
       const popupHtml =
